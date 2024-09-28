@@ -2,16 +2,72 @@
 #Requires AutoHotkey v2.0+
 #include .\OCR.ahk ; https://github.com/Descolada/OCR
 #include .\Helper.ahk
+#include .\ScreenCapture.ahk 
 
 ; https://github.com/MonzterDev/AHK-Game-Scripts
 
-F3::
-{
-    ocrResult := OCR.FromRect(1333, 140, 577, 890, , scale:=1).Text  ; Scans Stash area in auction window for item
-    ;ToolTip(ocrResult)
+
+
+
+
+; Declare coordinate variables at the top
+global x1 := 0, y1 := 0, x2 := 0, y2 := 0
+
+; Function to get coordinates
+CaptureCoordinates() {
+    ; Use global variables
+    global x1, y1, x2, y2
+
+    Tooltip("Move your mouse to the Top Left corner  of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x1, &y1)
+    Tooltip("Top Left corner set at: " x1 ", " y1)
+    Sleep(2000)
+
+    Tooltip("Move your mouse to the Top Right corner of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x2, &y1)
+    Tooltip("Top Right corner set at: " x2 ", " y1)
+    Sleep(2000)
+
+    Tooltip("Move your mouse to the Bottom Right corner of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x2, &y2)
+    Tooltip("Bottom Right corner set at: " x2 ", " y2)
+    Sleep(2000)
+
+    Tooltip("Move your mouse to the Bottom Left corner of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x1, &y2)
+    Tooltip("Bottom Left corner set at: " x1 ", " y2)
+    Sleep(2000)
+    
+    return {x1: x1, y1: y1, x2: x2, y2: y2}
+}
+
+; Hotkey to set the coordinates
+F9:: {
+    coordinates := CaptureCoordinates()
+    MsgBox("Coordinates for OCR.FromRect:`nX1: " coordinates.x1 "`nY1: " coordinates.y1 "`nX2: " coordinates.x2 "`nY2: " coordinates.y2)
+}
+
+; F3 hotkey for auction pricing logic
+F3:: {
+    ; Access global variables
+    global x1, y1, x2, y2
+
+    ; Check if the coordinates are valid
+    if (x1 = 0 && y1 = 0 && x2 = 0 && y2 = 0) {
+        MsgBox("Invalid coordinates. Please run the coordinate finder first.")
+        return
+    }
+
+    ; Use the coordinates in OCR.FromRect
+    ocrResult := OCR.FromRect(x1, y1, x2 - x1, y2 - y1, , scale := 1).Text
+
     rarity := GetItemRarity(ocrResult)
     itemName := GetItemName(ocrResult)
-    ;Sleep(100000)
+
     if (itemName = "") {
         ToolTip("Item not found, try again.")
         return
@@ -19,10 +75,6 @@ F3::
 
     enchantmentArr := GetItemEnchantments(ocrResult)
 
-    ; TODO
-    ; We could use OCR for most of the following steps.
-
-    ; Now we swap to view market tab
     MouseClick("Left", 850, 115, ,) ; View Market button
     Sleep(500)
 
@@ -54,16 +106,13 @@ F3::
     Sleep(100)
     MouseClick("Left", 1500, 200, , ) ; Click random attributes
     Sleep(100)
+
     for index, enchantmentL in enchantmentArr {
         MouseClick("Left", 1500, 250, , ) ; Click enchantment name search box
         Sleep(250)
-        ;Send("^a{BS}") ; Clear textbox
-        ;Sleep(100)
         Send(enchantmentL) ; Type enchantment name
         Sleep(100)
         enchantmentPos := (index * 25) + (250)
-        ;ToolTip("" . enchantmentPos)
-        ;Sleep(1000)
         MouseClick("Left", 1500, enchantmentPos, , ) ; Click enchantment name
         Sleep(100)
     }
@@ -71,6 +120,8 @@ F3::
     Sleep(100)
     MouseClick("Left", 1800, 275, , ) ; Click search
 }
+
+
 
 
 GetItemRarity(ocrResult) {
