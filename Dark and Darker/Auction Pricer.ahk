@@ -40,15 +40,18 @@ CaptureCoordinates() {
     KeyWait("LButton", "D")
     MouseGetPos(&x1, &y2)
     Tooltip("Bottom Left corner set at: " x1 ", " y2)
-    Sleep(2000)
+    Sleep(2000)    
     
-    return {x1: x1, y1: y1, x2: x2, y2: y2}
+    setTimer(RemoveTooltip, 3000)
+    RemoveTooltip() {
+        Tooltip("")  ; Clear the tooltip
+    }
+    
 }
 
 ; Hotkey to set the coordinates
 F9:: {
     coordinates := CaptureCoordinates()
-    MsgBox("Coordinates for OCR.FromRect:`nX1: " coordinates.x1 "`nY1: " coordinates.y1 "`nX2: " coordinates.x2 "`nY2: " coordinates.y2)
 }
 
 ; F3 hotkey for auction pricing logic
@@ -70,6 +73,10 @@ F3:: {
 
     if (itemName = "") {
         ToolTip("Item not found, try again.")
+        SetTimer(RemoveTooltip, 3000)  ; Set timer for 3000 milliseconds (3 seconds)
+        RemoveTooltip() {
+        Tooltip("")  ; Clear the tooltip
+            }
         return
     }
 
@@ -119,6 +126,7 @@ F3:: {
 
     Sleep(100)
     MouseClick("Left", 1800, 275, , ) ; Click search
+
 }
 
 
