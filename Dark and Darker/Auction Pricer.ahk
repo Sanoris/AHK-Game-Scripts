@@ -5,29 +5,97 @@
 
 ; https://github.com/MonzterDev/AHK-Game-Scripts
 
-F3::
-{
-    ocrResult := OCR.FromRect(1333, 140, 577, 890, , scale:=1).Text  ; Scans Stash area in auction window for item
-    ;ToolTip(ocrResult)
+
+
+
+
+; Declare coordinate variables at the top
+global x1 := 1344, y1 := 123, x2 := 1891, y2 := 1055
+
+; Function to get coordinates
+CaptureCoordinates() {
+    ; Use global variables
+    global x1, y1, x2, y2
+
+    Tooltip("Move your mouse to the Top Left corner  of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x1, &y1)
+    Tooltip("Top Left corner set at: " x1 ", " y1)
+    Sleep(1000)
+
+    Tooltip("Move your mouse to the Top Right corner of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x2, &y1)
+    Tooltip("Top Right corner set at: " x2 ", " y1)
+    Sleep(1000)
+
+    Tooltip("Move your mouse to the Bottom Right corner of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x2, &y2)
+    Tooltip("Bottom Right corner set at: " x2 ", " y2)
+    Sleep(1000)
+
+    Tooltip("Move your mouse to the Bottom Left corner of stash and click.")
+    KeyWait("LButton", "D")
+    MouseGetPos(&x1, &y2)
+    Tooltip("Bottom Left corner set at: " x1 ", " y2)
+    Sleep(1000)    
+    
+    setTimer(RemoveTooltip, 3000)
+    RemoveTooltip() {
+        Tooltip("")  ; Clear the tooltip
+    }
+    
+}
+
+; Hotkey to set the coordinates
+F9:: {
+    coordinates := CaptureCoordinates()
+}
+
+; F3 hotkey for auction pricing logic
+F3:: {
+    ; Access global variables
+    global x1, y1, x2, y2
+
+    ; Check if the coordinates are valid
+    if (x1 = 0 && y1 = 0 && x2 = 0 && y2 = 0) {
+        MsgBox("Invalid coordinates. Please run the coordinate finder first.")
+        return
+    }
+
+    ; Use the coordinates in OCR.FromRect
+    ocrResult := OCR.FromRect(x1, y1, x2 - x1, y2 - y1, , scale := 1).Text
+
     rarity := GetItemRarity(ocrResult)
-    itemName := GetItemName(ocrResult)
-    ;Sleep(100000)
-    if (itemName = "") {
+    somethingElse := GetItemName(ocrResult)
+
+    if (somethingElse[2] = "") {
         ToolTip("Item not found, try again.")
+        SetTimer(RemoveTooltip, 3000)  ; Set timer for 3000 milliseconds (3 seconds)
+        RemoveTooltip() {
+        Tooltip("")  ; Clear the tooltip
+            }
         return
     }
 
     enchantmentArr := GetItemEnchantments(ocrResult)
 
-    ; TODO
-    ; We could use OCR for most of the following steps.
-
-    ; Now we swap to view market tab
     MouseClick("Left", 850, 115, ,) ; View Market button
     Sleep(500)
 
     MouseClick("Left", 1785, 200, ,) ; Reset Filters button
     Sleep(400)
+
+
+    MouseClick("Left", 150, 200, , ) ; Click item name selection
+    Sleep(100)
+    MouseClick("Left", 150, 250, , ) ; Click item name search box
+    Sleep(200)
+    Send(somethingElse[2]) ; Type item name
+    Sleep(100)
+    MouseClick("Left", 150, 250 + (somethingElse[1] * 27), , ) ; Click item name
+    Sleep(100)
 
     MouseClick("Left", 400, 200, , ) ; Click rarity selection
     Sleep(100)
@@ -44,33 +112,25 @@ F3::
     }
     Sleep(100)
 
-    MouseClick("Left", 150, 200, , ) ; Click item name selection
-    Sleep(100)
-    MouseClick("Left", 150, 250, , ) ; Click item name search box
-    Sleep(200)
-    Send(itemName) ; Type item name
-    Sleep(100)
-    MouseClick("Left", 150, 275, , ) ; Click item name
-    Sleep(100)
     MouseClick("Left", 1500, 200, , ) ; Click random attributes
     Sleep(100)
+
     for index, enchantmentL in enchantmentArr {
         MouseClick("Left", 1500, 250, , ) ; Click enchantment name search box
         Sleep(250)
-        ;Send("^a{BS}") ; Clear textbox
-        ;Sleep(100)
         Send(enchantmentL) ; Type enchantment name
         Sleep(100)
         enchantmentPos := (index * 25) + (250)
-        ;ToolTip("" . enchantmentPos)
-        ;Sleep(1000)
         MouseClick("Left", 1500, enchantmentPos, , ) ; Click enchantment name
         Sleep(100)
     }
 
     Sleep(100)
     MouseClick("Left", 1800, 275, , ) ; Click search
+
 }
+
+
 
 
 GetItemRarity(ocrResult) {
@@ -90,26 +150,47 @@ GetItemRarity(ocrResult) {
     return rarity
 }
 
-GetItemName(ocrResult) {
-    itemName := ""
-    ; TODO
-    ; I tried using a while loop here because sometimes the OCR cannot detect the text.
-    ; This didn't actually solve the issue. For now, just use hotkey again.
-    while (itemName = "" && A_Index <= 3) {
-        for i, item in ITEMS {
-            if InStr(ocrResult, item) {
-                itemName := item
-                break
-            }
-        }
 
-        if (itemName = "") {
-            Sleep(100)
+GetItemName(ocrResult) {
+    itemName := ""  
+    superSet := ""
+    returnArray := []
+    returnArray.Push(0)
+    returnArray.Push("")
+
+    
+
+    
+
+    for i, item in ITEMS {
+        if InStr(ocrResult, item) {
+            itemName := item
+            break
         }
     }
 
-    return itemName
+    for i, item in ITEMS{
+        if InStr(item, itemName) {
+            superSet .= item .= "|"
+        }
+    }
+    sortedString := Sort(superSet, "D|")
+    itemArray := StrSplit(sortedString,"|")
+
+    ; Check for matches
+    for i, BigItem in itemArray {
+        if BigItem = itemName {
+            returnArray[1] := i
+            returnArray[2] := BigItem
+            break
+        }
+    }
+    Sleep(100)
+
+    
+    return returnArray
 }
+
 
 GetItemEnchantments(ocrResult) {
     ; Enchantments (Random Attributes) can be distinguished from the static attributes by the "+" sign and number on the left side of the enchantment name.
@@ -144,3 +225,4 @@ GetItemEnchantments(ocrResult) {
 
     return enchantmentsFound
 }
+
