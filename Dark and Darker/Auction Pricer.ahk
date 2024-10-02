@@ -10,7 +10,7 @@
 
 
 ; Declare coordinate variables at the top
-global x1 := 1344, y1 := 123, x2 := 1891, y2 := 1055
+global x1 := 1210, y1 := 11, x2 := 1912, y2 := 1072
 
 ; Function to get coordinates
 CaptureCoordinates() {
@@ -66,7 +66,7 @@ F3:: {
 
     ; Use the coordinates in OCR.FromRect
     ocrResult := OCR.FromRect(x1, y1, x2 - x1, y2 - y1, , scale := 1).Text
-
+    itemSlot := GetItemSlot(ocrResult)
     rarity := GetItemRarity(ocrResult)
     somethingElse := GetItemName(ocrResult)
 
@@ -97,20 +97,37 @@ F3:: {
     MouseClick("Left", 150, 250 + (somethingElse[1] * 27), , ) ; Click item name
     Sleep(100)
 
-    MouseClick("Left", 400, 200, , ) ; Click rarity selection
-    Sleep(100)
-    if (rarity = "Uncommon") {
-        MouseClick("Left", 400, 325, , ) ; Click rarity
-    } else if (rarity = "Rare") {
-        MouseClick("Left", 400, 350, , ) ; Click rarity
-    } else if (rarity = "Epic") {
-        MouseClick("Left", 400, 375, , ) ; Click rarity
-    } else if (rarity = "Legend") {
-        MouseClick("Left", 400, 400, , ) ; Click rarity
-    } else if (rarity = "Unique") {
-        MouseClick("Left", 400, 425, , ) ; Click rarity
+    if (itemSlot = "Not Jewlery") {
+        MouseClick("Left", 400, 200, , ) ; Click rarity selection
+        Sleep(100)
+        if (rarity = "Uncommon") {
+            MouseClick("Left", 400, 325, , ) ; Click rarity
+        } else if (rarity = "Rare") {
+            MouseClick("Left", 400, 350, , ) ; Click rarity
+        } else if (rarity = "Epic") {
+            MouseClick("Left", 400, 375, , ) ; Click rarity
+        } else if (rarity = "Legend") {
+            MouseClick("Left", 400, 400, , ) ; Click rarity
+        } else if (rarity = "Unique") {
+            MouseClick("Left", 400, 425, , ) ; Click rarity
+        }
+        Sleep(100)
+    } else {
+        MouseClick("Left", 400, 200, , ) ; Click rarity selection
+        Sleep(100)
+        if (rarity = "Uncommon") {
+            MouseClick("Left", 400, 275, , ) ; Click rarity
+        } else if (rarity = "Rare") {
+            MouseClick("Left", 400, 300, , ) ; Click rarity
+        } else if (rarity = "Epic") {
+            MouseClick("Left", 400, 325, , ) ; Click rarity
+        } else if (rarity = "Legend") {
+            MouseClick("Left", 400, 350, , ) ; Click rarity
+        } else if (rarity = "Unique") {
+            MouseClick("Left", 400, 375, , ) ; Click rarity
+        }
+        Sleep(100)
     }
-    Sleep(100)
 
     MouseClick("Left", 1500, 200, , ) ; Click random attributes
     Sleep(100)
@@ -150,9 +167,22 @@ GetItemRarity(ocrResult) {
     return rarity
 }
 
+GetItemSlot(ocrResult){
+    itemSlot := ""
+    if InStr(ocrResult, "Slot Type: Ring"){
+        itemSlot := "Ring"
+    } else if InStr(ocrResult, "Necklace"){
+        itemSlot := "Necklace"
+    } else {
+        itemSlot := "Not Jewlery"
+    }
+    
+    return itemSlot
+}
+
 
 GetItemName(ocrResult) {
-    itemName := ""  
+    itemName := "jkljkl;asd;lkfk2l3kkl234jhla;asdflsdlf;'a''s'df''az'asdf;s;s'a'a'asdfsdf"  
     superSet := ""
     returnArray := []
     returnArray.Push(0)
